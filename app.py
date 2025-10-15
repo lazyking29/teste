@@ -1,36 +1,33 @@
+# app.py
 import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+from data_fetcher import fetch_atletico_games
 
-st.set_page_config(
-    page_title="Atlético Predictor - Interface Funcional",
-    layout="wide",
-    page_icon="⚽"
-)
-
-st.title("⚽ Atlético Predictor - Interface Funcional")
+st.set_page_config(page_title="Atlético Predictor - Dados Reais", layout="wide", page_icon="⚽")
+st.title("⚽ Atlético Predictor - Dados Reais (Versão Inicial)")
 
 # ------------------------
-# Mock dos próximos jogos
+# Fetch dados reais
 # ------------------------
-mock_games = pd.DataFrame({
-    "Data": ["20 Out 2025", "27 Out 2025", "2 Nov 2025"],
-    "Adversário": ["Real Betis", "Villarreal", "Barcelona"],
-    "Local": ["Casa", "Fora", "Casa"],
-    "xG Atlético": [1.6, 1.4, 1.1],
-    "xG Adversário": [1.1, 1.5, 1.8],
-    "Posse Atlético": [58, 55, 52],
-    "Forma Atlético": [70, 68, 65],
-    "Passes Sucesso": [84, 82, 80],
-    "Remates": [14, 13, 11],
-    "Força Adversário": [60, 65, 85]
-})
+try:
+    games_df = fetch_atletico_games()
+except Exception as e:
+    st.error(f"Erro ao buscar dados: {e}")
+    games_df = pd.DataFrame({
+        "Data":["2025-10-20"], "Adversário":["Real Betis"],
+        "xG_Atlético":[1.6], "xG_Adversário":[1.1],
+        "Posse":[58], "Remates":[14], "Resultado":["2-1"]
+    })
+
+# Pegar último jogo como referência
+ultimo_jogo = games_df.iloc[0]
 
 # ------------------------
 # Layout principal
 # ------------------------
-col_left, col_right = st.columns([1, 2])
+col_left, col_right = st.columns([1,2])
 
 # ------------------------
 # Sliders à esquerda por categorias
@@ -40,27 +37,27 @@ with col_left:
 
     # Equipa
     st.subheader("Equipe")
-    forma = st.slider("Forma recente (0-100)", 0, 100, 70, 1)
-    adversario_forca = st.slider("Força do adversário (0-100)", 0, 100, 60, 1)
+    forma = st.slider(f"Forma recente (0-100) | Último jogo: 70", 0, 100, 70, 1)
+    adversario_forca = st.slider(f"Força do adversário (0-100) | {ultimo_jogo['Adversário']}", 0, 100, 60, 1)
 
     # Ataque
     st.subheader("Ataque")
-    xg = st.slider("xG médio do Atlético", 0.0, 3.0, 1.6, 0.1)
-    remates = st.slider("Remates por jogo", 0, 25, 14, 1)
+    xg = st.slider(f"xG médio Atlético | Último jogo: {ultimo_jogo['xG_Atlético']}", 0.0, 3.0, float(ultimo_jogo['xG_Atlético']), 0.1)
+    remates = st.slider(f"Remates por jogo | Último jogo: {ultimo_jogo['Remates']}", 0, 25, int(ultimo_jogo['Remates']), 1)
 
     # Defesa
     st.subheader("Defesa")
-    defesa = st.slider("Interceções / Recuperações (0-100)", 0, 100, 70, 1)
+    defesa = st.slider("Interceções / Recuperações (0-100) | Exemplo: 70", 0, 100, 70, 1)
 
     # Passe
     st.subheader("Passe")
-    passes_sucesso = st.slider("Taxa de sucesso de passes (%)", 50, 95, 84, 1)
-    passes_prog = st.slider("Passes progressivos (%)", 0, 100, 60, 1)
+    passes_sucesso = st.slider(f"Taxa de sucesso de passes (%) | Último jogo: 84", 50, 95, 84, 1)
+    passes_prog = st.slider("Passes progressivos (%) | Exemplo: 60", 0, 100, 60, 1)
 
     # Bolas Paradas
     st.subheader("Bolas Paradas")
-    cantos = st.slider("Cantos por jogo", 0, 15, 5, 1)
-    faltas = st.slider("Faltas cometidas por jogo", 0, 15, 10, 1)
+    cantos = st.slider("Cantos por jogo | Exemplo: 5", 0, 15, 5, 1)
+    faltas = st.slider("Faltas cometidas por jogo | Exemplo: 10", 0, 15, 10, 1)
 
 # ------------------------
 # Próximo jogo à direita
@@ -68,23 +65,22 @@ with col_left:
 with col_right:
     st.header("🔮 Próximo Jogo")
 
-    # Seleção de jogo
     jogo_idx = st.selectbox(
         "Escolhe o próximo jogo",
-        range(len(mock_games)),
-        format_func=lambda x: f"{mock_games.loc[x,'Data']} vs {mock_games.loc[x,'Adversário']} ({mock_games.loc[x,'Local']})"
+        range(len(games_df)),
+        format_func=lambda x: f"{games_df.loc[x,'Data'].date()} vs {games_df.loc[x,'Adversário']} ({'Casa' if x%2==0 else 'Fora'})"
     )
 
-    jogo = mock_games.loc[jogo_idx]
+    jogo = games_df.loc[jogo_idx]
 
-    # Modelo simples
+    # Modelo simples de probabilidades
     score = (
-        xg * 0.4 +
-        (jogo["Posse Atlético"]/100) * 0.2 +
-        (forma / 100) * 0.2 +
-        (passes_sucesso / 100) * 0.1 +
-        (remates / 15 * 0.05) -
-        (adversario_forca / 100 * 0.3)
+        xg*0.4 +
+        (jogo["Posse"]/100)*0.2 +
+        (forma/100)*0.2 +
+        (passes_sucesso/100)*0.1 +
+        (remates/15*0.05) -
+        (adversario_forca/100*0.3)
     )
     prob_vitoria = np.clip(score, 0, 1)
     prob_empate = (1 - abs(0.5 - prob_vitoria)) * 0.4
@@ -95,7 +91,6 @@ with col_right:
         "Vitória Adversário": prob_derrota
     }
 
-    # Resultado provável
     pred_result = max(probs, key=probs.get)
     st.metric(label="Resultado provável", value=pred_result)
     st.metric(label="Probabilidade de vitória Atlético", value=f"{probs['Vitória Atlético']*100:.1f}%")
@@ -118,18 +113,5 @@ with col_right:
 # ------------------------
 # Calendário abaixo
 # ------------------------
-st.header("📅 Próximos Jogos")
-st.markdown("Seleciona o próximo jogo acima para ver detalhes.")
-
-st.dataframe(
-    mock_games[["Data","Adversário","Local","xG Atlético","xG Adversário"]],
-    use_container_width=True
-)
-
-st.markdown("""
-💡 **Notas:**
-- Sliders à esquerda, divididos por categorias.
-- Próximo jogo à direita com gráfico compacto colorido.
-- Calendário abaixo apenas informativo.
-- Totalmente funcional no Streamlit Cloud.
-""")
+st.header("📅 Últimos Jogos Atlético")
+st.dataframe(games_df[["Data","Adversário","xG_Atlético","xG_Adversário","Posse","Remates","Resultado"]], use_container_width=True)
