@@ -1,4 +1,3 @@
-# app.py
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -6,22 +5,18 @@ import plotly.graph_objects as go
 from data_fetcher import fetch_atletico_games
 
 st.set_page_config(page_title="Atlético Predictor - Dados Reais", layout="wide", page_icon="⚽")
-st.title("⚽ Atlético Predictor - Dados Reais (Versão Inicial)")
+st.title("⚽ Atlético Predictor - Dados Reais (Com Info)")
 
 # ------------------------
-# Fetch dados reais
+# Buscar dados reais
 # ------------------------
 try:
     games_df = fetch_atletico_games()
 except Exception as e:
     st.error(f"Erro ao buscar dados: {e}")
-    games_df = pd.DataFrame({
-        "Data":["2025-10-20"], "Adversário":["Real Betis"],
-        "xG_Atlético":[1.6], "xG_Adversário":[1.1],
-        "Posse":[58], "Remates":[14], "Resultado":["2-1"]
-    })
+    st.stop()
 
-# Pegar último jogo como referência
+# Último jogo para referência nos sliders
 ultimo_jogo = games_df.iloc[0]
 
 # ------------------------
@@ -30,7 +25,7 @@ ultimo_jogo = games_df.iloc[0]
 col_left, col_right = st.columns([1,2])
 
 # ------------------------
-# Sliders à esquerda por categorias
+# Sliders à esquerda com info
 # ------------------------
 with col_left:
     st.header("⚙️ Ajusta as Variáveis")
@@ -38,26 +33,48 @@ with col_left:
     # Equipa
     st.subheader("Equipe")
     forma = st.slider(f"Forma recente (0-100) | Último jogo: 70", 0, 100, 70, 1)
-    adversario_forca = st.slider(f"Força do adversário (0-100) | {ultimo_jogo['Adversário']}", 0, 100, 60, 1)
+    if st.button("ℹ️", key="info_forma"):
+        st.info("Forma recente: média ponderada de resultados recentes da equipe (0=fraco, 100=ótimo).")
+
+    adversario_forca = st.slider(f"Força do adversário | {ultimo_jogo['Adversário']}", 0, 100, 60, 1)
+    if st.button("ℹ️", key="info_forca"):
+        st.info("Força do adversário: estimativa da qualidade do adversário (0=fraco, 100=muito forte).")
 
     # Ataque
     st.subheader("Ataque")
     xg = st.slider(f"xG médio Atlético | Último jogo: {ultimo_jogo['xG_Atlético']}", 0.0, 3.0, float(ultimo_jogo['xG_Atlético']), 0.1)
+    if st.button("ℹ️", key="info_xg"):
+        st.info("xG (Gols Esperados): estima a quantidade de gols que a equipe deve marcar baseado nas chances criadas.")
+
     remates = st.slider(f"Remates por jogo | Último jogo: {ultimo_jogo['Remates']}", 0, 25, int(ultimo_jogo['Remates']), 1)
+    if st.button("ℹ️", key="info_remates"):
+        st.info("Remates: número total de chutes ao gol por jogo.")
 
     # Defesa
     st.subheader("Defesa")
     defesa = st.slider("Interceções / Recuperações (0-100) | Exemplo: 70", 0, 100, 70, 1)
+    if st.button("ℹ️", key="info_defesa"):
+        st.info("Interceções/Recuperações: indica a eficácia defensiva da equipe em interceptar a bola.")
 
     # Passe
     st.subheader("Passe")
     passes_sucesso = st.slider(f"Taxa de sucesso de passes (%) | Último jogo: 84", 50, 95, 84, 1)
+    if st.button("ℹ️", key="info_passes"):
+        st.info("Taxa de sucesso de passes: percentual de passes completados corretamente.")
+
     passes_prog = st.slider("Passes progressivos (%) | Exemplo: 60", 0, 100, 60, 1)
+    if st.button("ℹ️", key="info_passes_prog"):
+        st.info("Passes progressivos: passes que avançam significativamente a bola em direção ao gol adversário.")
 
     # Bolas Paradas
     st.subheader("Bolas Paradas")
     cantos = st.slider("Cantos por jogo | Exemplo: 5", 0, 15, 5, 1)
+    if st.button("ℹ️", key="info_cantos"):
+        st.info("Cantos por jogo: quantidade de escanteios batidos pela equipe.")
+
     faltas = st.slider("Faltas cometidas por jogo | Exemplo: 10", 0, 15, 10, 1)
+    if st.button("ℹ️", key="info_faltas"):
+        st.info("Faltas cometidas: quantidade de faltas sofridas ou cometidas durante o jogo.")
 
 # ------------------------
 # Próximo jogo à direita
