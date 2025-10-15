@@ -1,11 +1,12 @@
+# app.py
 import streamlit as st
 import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 from data_fetcher import fetch_atletico_games
 
-st.set_page_config(page_title="Atlético Predictor - Dados Reais", layout="wide", page_icon="⚽")
-st.title("⚽ Atlético Predictor - Dados Reais (Com Info)")
+st.set_page_config(page_title="Atlético Predictor", layout="wide", page_icon="⚽")
+st.title("⚽ Atlético Predictor - Dados Reais")
 
 # ------------------------
 # Buscar dados reais
@@ -16,7 +17,6 @@ except Exception as e:
     st.error(f"Erro ao buscar dados: {e}")
     st.stop()
 
-# Último jogo para referência nos sliders
 ultimo_jogo = games_df.iloc[0]
 
 # ------------------------
@@ -32,7 +32,7 @@ with col_left:
 
     # Equipa
     st.subheader("Equipe")
-    forma = st.slider(f"Forma recente (0-100) | Último jogo: 70", 0, 100, 70, 1)
+    forma = st.slider(f"Forma recente (0-100) | Ex: 70", 0, 100, 70, 1)
     if st.button("ℹ️", key="info_forma"):
         st.info("Forma recente: média ponderada de resultados recentes da equipe (0=fraco, 100=ótimo).")
 
@@ -52,7 +52,7 @@ with col_left:
 
     # Defesa
     st.subheader("Defesa")
-    defesa = st.slider("Interceções / Recuperações (0-100) | Exemplo: 70", 0, 100, 70, 1)
+    defesa = st.slider("Interceções / Recuperações (0-100) | Ex: 70", 0, 100, 70, 1)
     if st.button("ℹ️", key="info_defesa"):
         st.info("Interceções/Recuperações: indica a eficácia defensiva da equipe em interceptar a bola.")
 
@@ -62,17 +62,17 @@ with col_left:
     if st.button("ℹ️", key="info_passes"):
         st.info("Taxa de sucesso de passes: percentual de passes completados corretamente.")
 
-    passes_prog = st.slider("Passes progressivos (%) | Exemplo: 60", 0, 100, 60, 1)
+    passes_prog = st.slider("Passes progressivos (%) | Ex: 60", 0, 100, 60, 1)
     if st.button("ℹ️", key="info_passes_prog"):
         st.info("Passes progressivos: passes que avançam significativamente a bola em direção ao gol adversário.")
 
     # Bolas Paradas
     st.subheader("Bolas Paradas")
-    cantos = st.slider("Cantos por jogo | Exemplo: 5", 0, 15, 5, 1)
+    cantos = st.slider("Cantos por jogo | Ex: 5", 0, 15, 5, 1)
     if st.button("ℹ️", key="info_cantos"):
         st.info("Cantos por jogo: quantidade de escanteios batidos pela equipe.")
 
-    faltas = st.slider("Faltas cometidas por jogo | Exemplo: 10", 0, 15, 10, 1)
+    faltas = st.slider("Faltas cometidas por jogo | Ex: 10", 0, 15, 10, 1)
     if st.button("ℹ️", key="info_faltas"):
         st.info("Faltas cometidas: quantidade de faltas sofridas ou cometidas durante o jogo.")
 
