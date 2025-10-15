@@ -1,3 +1,4 @@
+# app.py
 import streamlit as st
 import pandas as pd
 from data_fetcher import fetch_atletico_games
@@ -22,7 +23,7 @@ ultimo_jogo = games_df.iloc[0]
 col_left, col_right = st.columns([1,2])
 
 # ------------------------
-# Sliders à esquerda (valores do último jogo)
+# Sliders à esquerda
 # ------------------------
 with col_left:
     st.header("⚙️ Estatísticas do Último Jogo")
@@ -48,7 +49,7 @@ with col_left:
 # Próximo jogo à direita (informações simples)
 # ------------------------
 with col_right:
-    st.header("📅 Próximo Jogo")
+    st.header("📅 Últimos Jogos")
 
     for i, row in games_df.iterrows():
         st.write(f"{row['Data'].date()} vs {row['Adversário']} - Resultado: {row['Resultado']}")
