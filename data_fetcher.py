@@ -2,36 +2,36 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import time
 
-def fetch_atletico_games(season="2024-25"):
+def fetch_atletico_games():
     """
-    Busca dados básicos do Atlético de Madrid na La Liga diretamente do FBref.
-    Retorna DataFrame com algumas estatísticas.
+    Busca dados reais do Atlético de Madrid na La Liga diretamente do FBref.
+    Retorna um DataFrame com as estatísticas básicas de cada jogo.
     """
-    # URL da página de stats do Atlético
-    url = "https://fbref.com/en/squads/206d90db/Atlético-de-Madrid-Stats"
-
+    url = "https://fbref.com/en/squads/206d90db/schedule/Atl%C3%A9tico-de-Madrid-Scores-and-Fixtures-La-Liga"
     res = requests.get(url)
-    soup = BeautifulSoup(res.text, "html.parser")
+    if res.status_code != 200:
+        raise ValueError(f"Erro ao acessar FBref: {res.status_code}")
 
-    # Encontrar tabela padrão (id pode variar conforme a página)
-    table = soup.find("table", {"id": "stats_standard"})
+    soup = BeautifulSoup(res.text, "lxml")
+
+    # Pegar a primeira tabela visível (match logs)
+    table = soup.find("table")
     if table is None:
-        raise ValueError("Tabela de jogos não encontrada. Verifica o id da tabela no FBref.")
+        raise ValueError("Tabela de jogos não encontrada na página.")
 
     df = pd.read_html(str(table))[0]
 
-    # Selecionar apenas algumas colunas úteis
-    df = df[["Date", "Opponent", "xG", "xGA", "Poss", "Sh", "Result"]]
+    # Algumas colunas podem ter MultiIndex, simplificamos
+    df.columns = [c[1] if isinstance(c, tuple) else c for c in df.columns]
 
-    # Renomear colunas para mais clareza
-    df.columns = ["Data", "Adversário", "xG_Atlético", "xG_Adversário", "Posse", "Remates", "Resultado"]
+    # Selecionar colunas úteis e renomear
+    cols = ["Date", "Opponent", "Result", "GF", "GA", "xG", "xGA", "Poss", "Sh"]
+    df = df[cols]
+    df.columns = ["Data","Adversário","Resultado","Gols_Atlético","Gols_Adversário","xG_Atlético","xG_Adversário","Posse","Remates"]
 
-    # Converter coluna de Data para datetime
+    # Converter data
     df["Data"] = pd.to_datetime(df["Data"], errors="coerce")
-
-    # Ordenar por data
     df = df.sort_values("Data", ascending=False).reset_index(drop=True)
 
-    return df.head(10)  # últimos 10 jogos para teste
+    return df
