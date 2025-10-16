@@ -26,7 +26,8 @@ def get_team_matches(team_name="Atlético de Madrid", season=2024):
     for match in data["matches"]:
         home = match["homeTeam"]["name"]
         away = match["awayTeam"]["name"]
-        if team_name in [home, away]:
+        if team_name.lower().replace("é", "e") in home.lower() or team_name.lower().replace("é", "e") in away.lower():
+
             matches.append({
                 "Date": match["utcDate"][:10],
                 "Home": home,
